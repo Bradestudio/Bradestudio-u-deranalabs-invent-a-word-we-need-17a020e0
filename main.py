@@ -25,6 +25,7 @@
 # atomically (temp file + rename) so /output/entry.txt is never left
 # half-written.
 import os
+import tempfile
 
 # Final entry (98 Unicode code points, one line):
 # "plansigh — the quiet relief when someone else cancels plans you
@@ -61,8 +62,10 @@ def validate_entry(text):
 validate_entry(ENTRY)
 
 os.makedirs("/output", exist_ok=True)
-tmp_path = "/output/.entry.txt.tmp"
-with open(tmp_path, "w", encoding="utf-8") as f:
+# Unique temp name in the same directory: a fixed temp name would let two
+# concurrent runs overwrite each other's partial write before the rename.
+fd, tmp_path = tempfile.mkstemp(dir="/output", prefix=".entry.txt.", suffix=".tmp")
+with os.fdopen(fd, "w", encoding="utf-8") as f:
     f.write(ENTRY)
 os.replace(tmp_path, "/output/entry.txt")
 
